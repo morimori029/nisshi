@@ -5,7 +5,6 @@ import { Role, StaffMember, StaffAttendance } from '@/lib/types';
 
 // 18:00〜翌8:00 の2時間ごとの時刻
 const ROUND_HOURS = [18, 20, 22, 0, 2, 4, 6, 8];
-const ACTIVE_TYPES = new Set(['日勤', '遅番', '夜勤']);
 
 type FloorRounds = { floor1: Record<string, string>; floor2: Record<string, string> };
 
@@ -39,15 +38,18 @@ export default function NightRoundsSection({ nightRounds, onChange, roles, staff
         return () => document.removeEventListener('mousedown', handler);
     }, [openCell]);
 
-    // 出勤中のスタッフ（日勤・遅番・夜勤）
-    const activeIds = new Set(attendance.filter(a => ACTIVE_TYPES.has(a.attendance)).map(a => a.staffId));
-    const activeStaff = staff.filter(s => activeIds.has(s.id));
-
-    const floor1RoleIds = new Set(roles.filter(r => r.floor === '1F').map(r => r.id));
-    const floor2RoleIds = new Set(roles.filter(r => r.floor === '2F').map(r => r.id));
-    const floor1Staff = activeStaff.filter(s => floor1RoleIds.has(s.roleId));
-    const floor2Staff = activeStaff.filter(s => floor2RoleIds.has(s.roleId));
-    const otherStaff = activeStaff.filter(s => !floor1RoleIds.has(s.roleId) && !floor2RoleIds.has(s.roleId));
+    // 夜勤スタッフをフロア別に分ける（workFloor優先、なければロールのfloor）
+    const roleFloorMap = new Map(roles.map(r => [r.id, r.floor]));
+    const getEffectiveFloor = (staffId: string): '1F' | '2F' | undefined => {
+        const att = attendance.find(a => a.staffId === staffId);
+        if (att?.workFloor) return att.workFloor;
+        const s = staff.find(s => s.id === staffId);
+        const f = s ? roleFloorMap.get(s.roleId) : undefined;
+        return (f === '1F' || f === '2F') ? f : undefined;
+    };
+    const yakinIds = new Set(attendance.filter(a => a.attendance === '夜勤').map(a => a.staffId));
+    const floor1YakinStaff = staff.filter(s => yakinIds.has(s.id) && getEffectiveFloor(s.id) === '1F');
+    const floor2YakinStaff = staff.filter(s => yakinIds.has(s.id) && getEffectiveFloor(s.id) === '2F');
 
     const handleCellClick = (e: React.MouseEvent, floor: 'floor1' | 'floor2', hour: number) => {
         if (openCell?.floor === floor && openCell?.hour === hour) {
@@ -69,6 +71,7 @@ export default function NightRoundsSection({ nightRounds, onChange, roles, staff
     ];
 
     const currentVal = openCell ? (nightRounds[openCell.floor][String(openCell.hour)] ?? '') : '';
+    const popoverStaff = openCell?.floor === 'floor1' ? floor1YakinStaff : floor2YakinStaff;
 
     return (
         <div className="card">
@@ -156,62 +159,29 @@ export default function NightRoundsSection({ nightRounds, onChange, roles, staff
                         minWidth: 240,
                     }}
                 >
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 8 }}>
-                        {[
-                            { label: '1F', color: 'var(--blue)', staffList: floor1Staff },
-                            { label: '2F', color: 'var(--purple)', staffList: floor2Staff },
-                        ].map(({ label: floorLabel, color, staffList }) => (
-                            <div key={floorLabel}>
-                                <div style={{
-                                    fontSize: '0.68rem', color, fontWeight: 700,
-                                    marginBottom: 6, textAlign: 'center',
-                                    borderBottom: `2px solid ${color}`, paddingBottom: 3,
-                                }}>
-                                    {floorLabel}
-                                </div>
-                                {staffList.map(s => (
-                                    <button
-                                        key={s.id}
-                                        onClick={() => set(openCell.floor, openCell.hour, s.name)}
-                                        style={{
-                                            display: 'block', width: '100%',
-                                            padding: '5px 8px', fontSize: '0.78rem',
-                                            textAlign: 'left',
-                                            background: currentVal === s.name ? 'var(--accent-dim)' : 'transparent',
-                                            color: currentVal === s.name ? 'var(--accent)' : 'var(--text-primary)',
-                                            border: 'none', borderRadius: 'var(--radius-sm)',
-                                            cursor: 'pointer',
-                                            fontWeight: currentVal === s.name ? 600 : 400,
-                                        }}
-                                    >
-                                        {s.name}
-                                    </button>
-                                ))}
-                                {staffList.length === 0 && (
-                                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 8px', display: 'block' }}>なし</span>
-                                )}
-                            </div>
+                    <div style={{ marginBottom: 8 }}>
+                        {popoverStaff.length === 0 && (
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', padding: '4px 8px', display: 'block' }}>夜勤者が設定されていません</span>
+                        )}
+                        {popoverStaff.map(s => (
+                            <button
+                                key={s.id}
+                                onClick={() => set(openCell.floor, openCell.hour, s.name)}
+                                style={{
+                                    display: 'block', width: '100%',
+                                    padding: '6px 10px', fontSize: '0.82rem',
+                                    textAlign: 'left',
+                                    background: currentVal === s.name ? 'var(--accent-dim)' : 'transparent',
+                                    color: currentVal === s.name ? 'var(--accent)' : 'var(--text-primary)',
+                                    border: 'none', borderRadius: 'var(--radius-sm)',
+                                    cursor: 'pointer',
+                                    fontWeight: currentVal === s.name ? 600 : 400,
+                                }}
+                            >
+                                {s.name}
+                            </button>
                         ))}
                     </div>
-                    {otherStaff.length > 0 && (
-                        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                            {otherStaff.map(s => (
-                                <button
-                                    key={s.id}
-                                    onClick={() => set(openCell.floor, openCell.hour, s.name)}
-                                    style={{
-                                        padding: '4px 8px', fontSize: '0.75rem',
-                                        background: currentVal === s.name ? 'var(--accent-dim)' : 'var(--bg-input)',
-                                        color: currentVal === s.name ? 'var(--accent)' : 'var(--text-primary)',
-                                        border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    {s.name}
-                                </button>
-                            ))}
-                        </div>
-                    )}
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: 6, marginTop: 6 }}>
                         <button
                             onClick={() => set(openCell.floor, openCell.hour, '')}

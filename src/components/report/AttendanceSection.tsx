@@ -32,12 +32,13 @@ function getStaffOfShift(attendance: StaffAttendance[], staffIds: string[], type
     return staffIds.filter(id => getAtt(attendance, id) === type);
 }
 
-function toggleStaff(attendance: StaffAttendance[], staffId: string, type: AttendanceType): StaffAttendance[] {
+function toggleStaff(attendance: StaffAttendance[], staffId: string, type: AttendanceType, workFloor?: '1F' | '2F'): StaffAttendance[] {
     const current = getAtt(attendance, staffId);
     const next: AttendanceType = current === type ? '' : type;
     const exists = attendance.find(a => a.staffId === staffId);
-    if (exists) return attendance.map(a => a.staffId === staffId ? { ...a, attendance: next } : a);
-    return [...attendance, { staffId, attendance: next }];
+    const floorVal = next ? workFloor : undefined;
+    if (exists) return attendance.map(a => a.staffId === staffId ? { ...a, attendance: next, workFloor: floorVal } : a);
+    return [...attendance, { staffId, attendance: next, workFloor: floorVal }];
 }
 
 /* ── シフト選択モーダル ── */
@@ -113,11 +114,28 @@ export default function AttendanceSection({ roles, staff, attendance, holidayCou
 
     const handleToggle = (staffId: string) => {
         if (!modal) return;
-        onChange(toggleStaff(attendance, staffId, modal.type));
+        const floor = modalRole?.floor;
+        const workFloor = (floor === '1F' || floor === '2F') ? floor : undefined;
+        onChange(toggleStaff(attendance, staffId, modal.type, workFloor));
     };
 
     const modalRole = modal ? roles.find(r => r.id === modal.roleId) : null;
-    const modalStaff = modal ? staff.filter(s => s.roleId === modal.roleId) : [];
+    const nursingRoleIds = new Set(roles.filter(r => r.name.includes('看護')).map(r => r.id));
+    const roleFloorMap = new Map(roles.map(r => [r.id, r.floor]));
+    const modalStaff = modal
+        ? nursingRoleIds.has(modal.roleId)
+            ? staff.filter(s => s.roleId === modal.roleId)
+            : staff
+                .filter(s => !nursingRoleIds.has(s.roleId))
+                .sort((a, b) => {
+                    const mf = modalRole?.floor;
+                    const af = roleFloorMap.get(a.roleId);
+                    const bf = roleFloorMap.get(b.roleId);
+                    const aMatch = mf && af === mf ? 0 : 1;
+                    const bMatch = mf && bf === mf ? 0 : 1;
+                    return aMatch - bMatch;
+                })
+        : [];
 
     // 全体集計
     const totalByShift = (type: AttendanceType) => staff.filter(s => getAtt(attendance, s.id) === type).length;
@@ -146,8 +164,18 @@ export default function AttendanceSection({ roles, staff, attendance, holidayCou
                             const staffIds = roleStaff.map(s => s.id);
                             const unset = staffIds.filter(id => !getAtt(attendance, id)).length;
                             const hol = getHoliday(role.id);
-                            const assigned = roleStaff
-                                .filter(s => getAtt(attendance, s.id))
+                            const assigned = staff.filter(s => {
+                                    const att = attendance.find(a => a.staffId === s.id);
+                                    if (!att?.attendance) return false;
+                                    if (s.roleId === role.id) {
+                                        // 自ロール：workFloorが他フロアに設定されていたらここには出さない
+                                        if (att.workFloor && role.floor && att.workFloor !== role.floor) return false;
+                                        return true;
+                                    } else {
+                                        // 他ロール：workFloorがこのロールのフロアと一致する場合のみ表示
+                                        return !!(role.floor && att.workFloor === role.floor);
+                                    }
+                                })
                                 .sort((a, b) => {
                                     const ai = SHIFT_TYPES.indexOf(getAtt(attendance, a.id));
                                     const bi = SHIFT_TYPES.indexOf(getAtt(attendance, b.id));

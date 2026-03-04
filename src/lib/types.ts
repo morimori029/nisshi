@@ -31,6 +31,7 @@ export type AttendanceType =
 export interface StaffAttendance {
   staffId: string;
   attendance: AttendanceType;
+  workFloor?: '1F' | '2F';  // 当日の実際の勤務フロア（マスタと異なる場合に設定）
 }
 
 // =====================
