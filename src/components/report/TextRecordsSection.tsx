@@ -12,21 +12,8 @@ export default function TextRecordsSection({ report, onChange }: Props) {
 
     return (
         <div>
-            {/* Row 1: 居室移動 / 入所者 / 退所者 / 受診 */}
+            {/* Row 1: 入所者 / 退所者 / 外出・外泊 / 受診 */}
             <div className="report-row" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr', marginBottom: 16 }}>
-                {/* 居室移動 */}
-                <div className="card">
-                    <div className="card-header">
-                        <span className="card-title">🚪 居室移動</span>
-                    </div>
-                    <textarea
-                        placeholder="例：302号室 → 205号室（山田様）"
-                        value={report.roomTransfer}
-                        onChange={e => onChange('roomTransfer', e.target.value)}
-                        style={{ minHeight: 90 }}
-                    />
-                </div>
-
                 {/* 入所者 */}
                 <div className="card">
                     <div className="card-header">
@@ -53,6 +40,19 @@ export default function TextRecordsSection({ report, onChange }: Props) {
                     />
                 </div>
 
+                {/* 外出・外泊 */}
+                <div className="card">
+                    <div className="card-header">
+                        <span className="card-title">🚶 外出・外泊</span>
+                    </div>
+                    <textarea
+                        placeholder="外出・外泊の内容を入力..."
+                        value={report.outing ?? ''}
+                        onChange={e => onChange('outing', e.target.value)}
+                        style={{ minHeight: 90 }}
+                    />
+                </div>
+
                 {/* 受診 */}
                 <div className="card">
                     <div className="card-header">
@@ -67,8 +67,21 @@ export default function TextRecordsSection({ report, onChange }: Props) {
                 </div>
             </div>
 
-            {/* Row 2: 気温+湿度 / 入浴者数 / 備考 */}
-            <div className="report-row text-records-row2" style={{ gridTemplateColumns: '200px 260px 1fr', marginBottom: 16 }}>
+            {/* Row 2: 居室移動 / 気温+湿度 / 入浴者数 / 備考 */}
+            <div className="report-row text-records-row2" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr', marginBottom: 16 }}>
+                {/* 居室移動 */}
+                <div className="card">
+                    <div className="card-header">
+                        <span className="card-title">🚪 居室移動</span>
+                    </div>
+                    <textarea
+                        placeholder="例：302号室 → 205号室（山田様）"
+                        value={report.roomTransfer}
+                        onChange={e => onChange('roomTransfer', e.target.value)}
+                        style={{ minHeight: 100 }}
+                    />
+                </div>
+
                 {/* 気温・湿度 */}
                 <div className="card">
                     <div className="card-header">

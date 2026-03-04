@@ -62,6 +62,7 @@ function makeEmptyReport(date: string): DailyReport {
         admission: '',
         discharge: '',
         medicalVisit: '',
+        outing: '',
         temperature: null,
         humidity: null,
         bathing: { floor1: 0, floor2: 0 },
@@ -190,12 +191,16 @@ export default function ReportClient({ date }: { date: string }) {
                         ⌂
                     </button>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    {saveStatus !== 'idle' && (
-                        <span className={`save-status ${saveStatus}`}>{statusIcon} {statusLabel}</span>
-                    )}
-                    <button className="btn btn-secondary btn-sm no-print" onClick={() => window.print()}>🖨 印刷</button>
-                    <button className="btn btn-primary btn-sm no-print" onClick={handleSave} disabled={saving}>
+            </div>
+
+            {/* 右下固定ボタン */}
+            <div className="no-print" style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
+                {saveStatus !== 'idle' && (
+                    <span className={`save-status ${saveStatus}`}>{statusIcon} {statusLabel}</span>
+                )}
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button className="btn btn-secondary" onClick={() => window.print()} style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>🖨 印刷</button>
+                    <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ boxShadow: '0 4px 16px rgba(0,153,204,0.35)' }}>
                         {saving ? '保存中...' : '💾 保存'}
                     </button>
                 </div>

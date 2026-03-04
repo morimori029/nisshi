@@ -18,8 +18,8 @@ export default function AppNav() {
                 <Link href={`/report/${today}`} className={`nav-tab ${isReport ? 'active' : ''}`}>
                     📋 日報
                 </Link>
-                <Link href="/settings" className={`nav-tab ${isSettings ? 'active' : ''}`}>
-                    👥 職員管理
+                <Link href="/manual" className={`nav-tab ${pathname === '/manual' ? 'active' : ''}`}>
+                    📘 マニュアル
                 </Link>
             </div>
         </nav>

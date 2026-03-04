@@ -111,6 +111,7 @@ export interface DailyReport {
   admission: string;       // 入所者
   discharge: string;       // 退所者
   medicalVisit: string;    // 受診
+  outing?: string;          // 外出・外泊
   temperature: number | null;
   humidity: number | null;
   bathing: BathingCounts;

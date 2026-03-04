@@ -146,7 +146,13 @@ export default function AttendanceSection({ roles, staff, attendance, holidayCou
                             const staffIds = roleStaff.map(s => s.id);
                             const unset = staffIds.filter(id => !getAtt(attendance, id)).length;
                             const hol = getHoliday(role.id);
-                            const assigned = roleStaff.filter(s => getAtt(attendance, s.id));
+                            const assigned = roleStaff
+                                .filter(s => getAtt(attendance, s.id))
+                                .sort((a, b) => {
+                                    const ai = SHIFT_TYPES.indexOf(getAtt(attendance, a.id));
+                                    const bi = SHIFT_TYPES.indexOf(getAtt(attendance, b.id));
+                                    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+                                });
 
                             return (
                                 <div key={role.id}>
