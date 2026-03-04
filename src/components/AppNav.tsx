@@ -21,9 +21,6 @@ export default function AppNav() {
                 <Link href="/manual" className={`nav-tab ${pathname === '/manual' ? 'active' : ''}`}>
                     📘 マニュアル
                 </Link>
-                <Link href="/spec" className={`nav-tab ${pathname === '/spec' ? 'active' : ''}`}>
-                    📄 仕様書
-                </Link>
             </div>
         </nav>
     );
