@@ -114,11 +114,64 @@ function StaffEditModal({ initial, roles, onSave, onClose }: {
     );
 }
 
+const SETTINGS_PASSWORD = 'ajisaistaff';
+
+/* ========================
+   パスワードゲート
+   ======================== */
+function PasswordGate({ onAuth }: { onAuth: () => void }) {
+    const [input, setInput] = useState('');
+    const [error, setError] = useState(false);
+
+    const handleSubmit = () => {
+        if (input === SETTINGS_PASSWORD) {
+            sessionStorage.setItem('settings_auth', '1');
+            onAuth();
+        } else {
+            setError(true);
+            setInput('');
+        }
+    };
+
+    return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+            <div className="card" style={{ width: 320, padding: '32px 28px' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 6, textAlign: 'center' }}>🔒 職員管理</h2>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: 24 }}>
+                    パスワードを入力してください
+                </p>
+                <input
+                    type="password"
+                    value={input}
+                    onChange={e => { setInput(e.target.value); setError(false); }}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
+                    placeholder="パスワード"
+                    autoFocus
+                    style={{ width: '100%', marginBottom: 8 }}
+                />
+                {error && (
+                    <p style={{ fontSize: '0.82rem', color: 'var(--red)', marginBottom: 8 }}>
+                        パスワードが違います
+                    </p>
+                )}
+                <button className="btn btn-primary" onClick={handleSubmit} style={{ width: '100%' }}>
+                    ログイン
+                </button>
+            </div>
+        </div>
+    );
+}
+
 /* ========================
    メインページ
    ======================== */
 export default function SettingsPage() {
     const { toasts, addToast } = useToast();
+    const [authed, setAuthed] = useState(false);
+
+    useEffect(() => {
+        if (sessionStorage.getItem('settings_auth') === '1') setAuthed(true);
+    }, []);
 
     const [roles, setRoles] = useState<Role[]>([]);
     const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -263,6 +316,8 @@ export default function SettingsPage() {
 
     const selectedRole = roles.find(r => r.id === selectedRoleId);
     const filteredStaff = staff.filter(s => s.roleId === selectedRoleId);
+
+    if (!authed) return <PasswordGate onAuth={() => setAuthed(true)} />;
 
     return (
         <div>

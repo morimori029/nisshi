@@ -1,9 +1,3 @@
-
-
-
-
-
-
 # 介護施設 日報管理システム — 機能仕様書
 
 ## 目次
@@ -14,8 +8,9 @@
 4. [出勤職員管理](#4-出勤職員管理)
 5. [夜勤巡視サイン](#5-夜勤巡視サイン)
 6. [各種記録項目](#6-各種記録項目)
-7. [API 仕様](#7-api-仕様)
-8. [Google Sheets 構成](#8-google-sheets-構成)
+7. [職員管理ページ](#7-職員管理ページ)
+8. [API 仕様](#8-api-仕様)
+9. [Google Sheets 構成](#9-google-sheets-構成)
 
 ---
 
@@ -25,7 +20,7 @@
 |------|------|
 | システム名 | 介護施設 日報管理システム |
 | 目的 | 介護施設の日次業務記録（出勤、入居者数、夜勤巡視等）をブラウザで入力し、Google Sheets に保存・共有する |
-| 利用端末 | 施設内 LAN 上の PC（複数台）からブラウザでアクセス。サーバー PC 1 台で Next.js を起動 |
+| 利用端末 | 施設内 LAN 上の PC（複数台）からブラウザでアクセス。各 PC で Next.js をローカル起動 |
 | データ保存先 | Google Spreadsheet（サービスアカウント認証） |
 | URL 構成 | `/report/YYYY-MM-DD` … 日報 / `/settings` … 職員管理 / `/manual` … 操作マニュアル |
 
@@ -178,21 +173,53 @@ interface DailyReport {
 
 ---
 
-## 7. API 仕様
+## 7. 職員管理ページ
+
+### パスワード認証
+
+`/settings` ページにアクセスするとパスワード入力画面が表示されます。
+
+| 項目 | 値 |
+|------|------|
+| パスワード | `ajisaistaff` |
+| セッション保持 | ブラウザタブを閉じるまで再認証不要（sessionStorage） |
+
+> パスワードを変更する場合は `src/app/settings/page.tsx` 内の `SETTINGS_PASSWORD` 定数を編集してください。
+
+### 職種・職員の並び替え
+
+職種一覧・職員リストの各行左端にある `⠿` ハンドルをドラッグ&ドロップで並び順を変更できます。変更は即時 Google Sheets に保存されます。
+
+### API
+
+| メソッド | エンドポイント | 説明 |
+|---|---|---|
+| PATCH | `/api/roles` | 職種の並び順を一括更新（body: `{ ids: string[] }`） |
+| PATCH | `/api/staff` | 職員の並び順を一括更新（body: `{ ids: string[] }`） |
+
+---
+
+## 8. API 仕様
 
 | エンドポイント | メソッド | 説明 |
 |---|---|---|
 | `/api/roles` | GET | 職種一覧取得 |
-| `/api/roles` | POST | 職種作成・更新・並び替え・削除（`action` パラメータで分岐） |
+| `/api/roles` | POST | 職種作成 |
+| `/api/roles` | PUT | 職種更新 |
+| `/api/roles` | PATCH | 職種並び順一括更新（body: `{ ids: string[] }`） |
+| `/api/roles` | DELETE | 職種削除 |
 | `/api/staff` | GET | 職員一覧取得 |
-| `/api/staff` | POST | 職員作成・更新・並び替え・削除（`action` パラメータで分岐） |
+| `/api/staff` | POST | 職員作成 |
+| `/api/staff` | PUT | 職員更新 |
+| `/api/staff` | PATCH | 職員並び順一括更新（body: `{ ids: string[] }`） |
+| `/api/staff` | DELETE | 職員削除 |
 | `/api/report?date=YYYY-MM-DD` | GET | 指定日の日報取得（存在しない場合は 404） |
-| `/api/report` | POST | 日報保存（body: DailyReport。date が一致する行を上書き、なければ追加） |
+| `/api/report` | POST | 日報保存（date が一致する行を上書き、なければ追加） |
 | `/api/setup` | POST | スプレッドシートの初期シート作成（初回のみ） |
 
 ---
 
-## 8. Google Sheets 構成
+## 9. Google Sheets 構成
 
 | シート名 | 列 | 説明 |
 |---|---|---|
