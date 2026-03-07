@@ -188,7 +188,7 @@ export default function ReportClient({ date }: { date: string }) {
                     <span className="date-display">{formatDate(date)}</span>
                     <button className="date-nav-arrow" onClick={() => router.push(`/report/${nextDate(date)}`)}>▶</button>
                     <button className="date-nav-arrow" title="今日" onClick={() => router.push(`/report/${formatDateStr(new Date())}`)}>
-                        ⌂
+                        今日
                     </button>
                 </div>
             </div>
@@ -232,36 +232,38 @@ export default function ReportClient({ date }: { date: string }) {
                     />
 
                     {/* 入居者数 / 避難区分 / 介護度 */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            🏠 入居者数 / 🚨 避難区分 / 📊 介護度
-                        </span>
-                        <button
-                            className="btn btn-secondary btn-sm no-print"
-                            onClick={importFromPrevDay}
-                            disabled={importing}
-                            title="前日の入居者数・避難区分・介護度をコピーします"
-                            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                        >
-                            {importing
-                                ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> 取り込み中...</>
-                                : <>📥 前日から取り込む</>}
-                        </button>
-                    </div>
-                    <div className="report-row resident-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                        <ResidentSection
-                            residents={report.residents}
-                            onChange={v => updateReport('residents', v)}
-                        />
-                        <EvacuationSection
-                            evacuation={report.evacuation}
-                            onChange={v => updateReport('evacuation', v)}
-                        />
-                        <CareLevelSection
-                            careLevels={report.careLevels}
-                            totalResidents={(report.residents.floor1.male + report.residents.floor1.female + report.residents.floor2.male + report.residents.floor2.female)}
-                            onChange={v => updateReport('careLevels', v)}
-                        />
+                    <div className="residents-block">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                🏠 入居者数 / 🚨 避難区分 / 📊 介護度
+                            </span>
+                            <button
+                                className="btn btn-secondary btn-sm no-print"
+                                onClick={importFromPrevDay}
+                                disabled={importing}
+                                title="前日の入居者数・避難区分・介護度をコピーします"
+                                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                            >
+                                {importing
+                                    ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> 取り込み中...</>
+                                    : <>📥 前日から取り込む</>}
+                            </button>
+                        </div>
+                        <div className="report-row resident-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+                            <ResidentSection
+                                residents={report.residents}
+                                onChange={v => updateReport('residents', v)}
+                            />
+                            <EvacuationSection
+                                evacuation={report.evacuation}
+                                onChange={v => updateReport('evacuation', v)}
+                            />
+                            <CareLevelSection
+                                careLevels={report.careLevels}
+                                totalResidents={(report.residents.floor1.male + report.residents.floor1.female + report.residents.floor2.male + report.residents.floor2.female)}
+                                onChange={v => updateReport('careLevels', v)}
+                            />
+                        </div>
                     </div>
 
                     {/* テキスト記録・気温・入浴・備考 */}

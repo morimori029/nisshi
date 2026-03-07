@@ -757,9 +757,13 @@ textarea::placeholder {
     margin-bottom: 5pt !important;
   }
 
-  /* 気温・入浴・備考行：固定px幅をfr単位に変換 */
   .text-records-row2 {
-    grid-template-columns: 1fr 1fr 3fr !important;
+    grid-template-columns: 1fr 1fr 1fr 1fr !important;
+  }
+
+  .residents-block {
+    page-break-before: always;
+    break-before: page;
   }
 
   /* 夜勤巡視グリッド */
