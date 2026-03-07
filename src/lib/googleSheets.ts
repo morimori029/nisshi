@@ -98,6 +98,24 @@ export async function updateRole(role: Role): Promise<void> {
     });
 }
 
+export async function reorderRoles(orderedIds: string[]): Promise<void> {
+    const sheets = getSheetsClient();
+    const res = await sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEETS.ROLES}!A:A`,
+    });
+    const ids = (res.data.values || []).flat();
+    const data = orderedIds.map((id, newOrder) => {
+        const rowIndex = ids.indexOf(id);
+        if (rowIndex < 0) return null;
+        return { range: `${SHEETS.ROLES}!D${rowIndex + 1}`, values: [[newOrder]] };
+    }).filter(Boolean) as { range: string; values: number[][] }[];
+    await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: { valueInputOption: 'RAW', data },
+    });
+}
+
 export async function deleteRole(roleId: string): Promise<void> {
     const sheets = getSheetsClient();
     const res = await sheets.spreadsheets.values.get({
@@ -179,6 +197,24 @@ export async function updateStaff(staff: StaffMember): Promise<void> {
         requestBody: {
             values: [[staff.id, staff.name, staff.roleId, staff.order]],
         },
+    });
+}
+
+export async function reorderStaff(orderedIds: string[]): Promise<void> {
+    const sheets = getSheetsClient();
+    const res = await sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEETS.STAFF}!A:A`,
+    });
+    const ids = (res.data.values || []).flat();
+    const data = orderedIds.map((id, newOrder) => {
+        const rowIndex = ids.indexOf(id);
+        if (rowIndex < 0) return null;
+        return { range: `${SHEETS.STAFF}!D${rowIndex + 1}`, values: [[newOrder]] };
+    }).filter(Boolean) as { range: string; values: number[][] }[];
+    await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: { valueInputOption: 'RAW', data },
     });
 }
 

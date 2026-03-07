@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getStaff, addStaff, updateStaff, deleteStaff } from '@/lib/googleSheets';
+import { getStaff, addStaff, updateStaff, deleteStaff, reorderStaff } from '@/lib/googleSheets';
 
 export async function GET() {
     try {
@@ -24,6 +24,16 @@ export async function PUT(req: Request) {
     try {
         const body = await req.json();
         await updateStaff(body);
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+    }
+}
+
+export async function PATCH(req: Request) {
+    try {
+        const { ids } = await req.json();
+        await reorderStaff(ids);
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ success: false, error: String(error) }, { status: 500 });

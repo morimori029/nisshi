@@ -224,6 +224,43 @@ export default function SettingsPage() {
         } else addToast('削除エラー: ' + data.error, 'error');
     };
 
+    /* ------ Drag & Drop ------ */
+    const dragItem = useRef<string | null>(null);
+    const [dragOverRoleId, setDragOverRoleId] = useState<string | null>(null);
+    const [dragOverStaffId, setDragOverStaffId] = useState<string | null>(null);
+
+    const handleRoleDrop = async (targetId: string) => {
+        const fromId = dragItem.current;
+        setDragOverRoleId(null);
+        dragItem.current = null;
+        if (!fromId || fromId === targetId) return;
+        const fromIdx = roles.findIndex(r => r.id === fromId);
+        const toIdx = roles.findIndex(r => r.id === targetId);
+        if (fromIdx < 0 || toIdx < 0) return;
+        const newRoles = [...roles];
+        const [moved] = newRoles.splice(fromIdx, 1);
+        newRoles.splice(toIdx, 0, moved);
+        setRoles(newRoles);
+        await fetch('/api/roles', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: newRoles.map(r => r.id) }) });
+    };
+
+    const handleStaffDrop = async (targetId: string) => {
+        const fromId = dragItem.current;
+        setDragOverStaffId(null);
+        dragItem.current = null;
+        if (!fromId || fromId === targetId) return;
+        const roleStaff = staff.filter(s => s.roleId === selectedRoleId);
+        const otherStaff = staff.filter(s => s.roleId !== selectedRoleId);
+        const fromIdx = roleStaff.findIndex(s => s.id === fromId);
+        const toIdx = roleStaff.findIndex(s => s.id === targetId);
+        if (fromIdx < 0 || toIdx < 0) return;
+        const newRoleStaff = [...roleStaff];
+        const [moved] = newRoleStaff.splice(fromIdx, 1);
+        newRoleStaff.splice(toIdx, 0, moved);
+        setStaff([...otherStaff, ...newRoleStaff]);
+        await fetch('/api/staff', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: newRoleStaff.map(s => s.id) }) });
+    };
+
     const selectedRole = roles.find(r => r.id === selectedRoleId);
     const filteredStaff = staff.filter(s => s.roleId === selectedRoleId);
 
@@ -257,15 +294,23 @@ export default function SettingsPage() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 {roles.map(role => (
                                     <div key={role.id}
+                                        draggable
+                                        onDragStart={() => { dragItem.current = role.id; }}
+                                        onDragOver={e => { e.preventDefault(); setDragOverRoleId(role.id); }}
+                                        onDragLeave={() => setDragOverRoleId(null)}
+                                        onDrop={() => handleRoleDrop(role.id)}
+                                        onDragEnd={() => { setDragOverRoleId(null); dragItem.current = null; }}
                                         onClick={() => setSelectedRoleId(role.id)}
                                         style={{
                                             display: 'flex', alignItems: 'center', gap: 10,
                                             padding: '10px 14px', borderRadius: 'var(--radius-md)',
-                                            cursor: 'pointer',
-                                            background: selectedRoleId === role.id ? 'var(--accent-dim)' : 'var(--bg-input)',
-                                            border: `1px solid ${selectedRoleId === role.id ? 'var(--accent-border)' : 'var(--border)'}`,
+                                            cursor: 'grab',
+                                            background: dragOverRoleId === role.id ? 'var(--accent-dim)' : selectedRoleId === role.id ? 'var(--accent-dim)' : 'var(--bg-input)',
+                                            border: `1px solid ${dragOverRoleId === role.id ? 'var(--accent)' : selectedRoleId === role.id ? 'var(--accent-border)' : 'var(--border)'}`,
                                             transition: 'all 0.15s',
+                                            opacity: dragItem.current === role.id ? 0.5 : 1,
                                         }}>
+                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'grab', userSelect: 'none' }}>⠿</span>
                                         <div style={{ width: 10, height: 10, borderRadius: '50%', background: role.color, flexShrink: 0 }} />
                                         <span style={{ flex: 1, fontWeight: 500, fontSize: '0.9rem' }}>{role.name}</span>
                                         {role.floor && (
@@ -310,7 +355,20 @@ export default function SettingsPage() {
                                     <table className="data-table" style={{ marginBottom: 12 }}>
                                         <tbody>
                                             {filteredStaff.map((s, i) => (
-                                                <tr key={s.id}>
+                                                <tr key={s.id}
+                                                    draggable
+                                                    onDragStart={() => { dragItem.current = s.id; }}
+                                                    onDragOver={e => { e.preventDefault(); setDragOverStaffId(s.id); }}
+                                                    onDragLeave={() => setDragOverStaffId(null)}
+                                                    onDrop={() => handleStaffDrop(s.id)}
+                                                    onDragEnd={() => { setDragOverStaffId(null); dragItem.current = null; }}
+                                                    style={{
+                                                        cursor: 'grab',
+                                                        background: dragOverStaffId === s.id ? 'var(--accent-dim)' : undefined,
+                                                        outline: dragOverStaffId === s.id ? '1px solid var(--accent)' : undefined,
+                                                        opacity: dragItem.current === s.id ? 0.5 : 1,
+                                                    }}>
+                                                    <td style={{ width: 24, color: 'var(--text-muted)', fontSize: '0.85rem', userSelect: 'none' }}>⠿</td>
                                                     <td style={{ width: 28, color: 'var(--text-muted)', fontSize: '0.75rem' }}>{i + 1}</td>
                                                     <td style={{ fontWeight: 500 }}>{s.name}</td>
                                                     <td style={{ width: 72 }}>
