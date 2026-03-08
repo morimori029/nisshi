@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Role, StaffMember, StaffAttendance, AttendanceType, RoleHolidayCounts } from '@/lib/types';
 
 const SHIFT_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+    '早番': { label: '早番', color: '#059669', bg: 'rgba(5,150,105,0.1)', border: 'rgba(5,150,105,0.4)' },
     '日勤': { label: '日勤', color: '#0099cc', bg: 'rgba(0,153,204,0.1)', border: 'rgba(0,153,204,0.4)' },
     '遅番': { label: '遅番', color: '#2563eb', bg: 'rgba(37,99,235,0.1)', border: 'rgba(37,99,235,0.4)' },
     '夜勤': { label: '夜勤', color: '#d97706', bg: 'rgba(217,119,6,0.1)', border: 'rgba(217,119,6,0.4)' },
@@ -13,7 +14,7 @@ const SHIFT_CONFIG: Record<string, { label: string; color: string; bg: string; b
     '欠勤': { label: '欠勤', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.4)' },
 };
 
-const SHIFT_TYPES: AttendanceType[] = ['日勤', '遅番', '夜勤', '研修・出張'];
+const SHIFT_TYPES: AttendanceType[] = ['早番', '日勤', '遅番', '夜勤', '研修・出張'];
 
 interface Props {
     roles: Role[];

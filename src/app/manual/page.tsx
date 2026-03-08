@@ -23,23 +23,27 @@ export default function ManualPage() {
             <Section id="basic" title="1. 基本的な使い方">
                 <SubSection title="日報を開く">
                     <p>アプリを起動すると、自動的に今日の日報が表示されます。</p>
-                    <p>画面上部の <Chip>◀ ▶</Chip> ボタンで前日・翌日に移動できます。<Chip>⌂</Chip> ボタンで今日に戻ります。</p>
+                    <p>画面上部の <Chip>◀ ▶</Chip> ボタンで前日・翌日に移動できます。<Chip>今日</Chip> ボタンで今日に戻ります。</p>
+                </SubSection>
+                <SubSection title="前日から取り込む">
+                    <p>日付の右にある <Chip>📥 前日から取り込む</Chip> ボタンを押すと、前日の入居者数・避難区分・介護度をコピーできます。</p>
+                    <p>変化がない日はこのボタンを使うと便利です。</p>
                 </SubSection>
                 <SubSection title="保存する">
-                    <p>入力が終わったら画面右上の <Chip primary>💾 保存</Chip> ボタンを押してください。</p>
+                    <p>入力が終わったら画面右下の <Chip primary>💾 保存</Chip> ボタンを押してください。</p>
                     <p>保存するとデータはGoogleスプレッドシートに記録されます。</p>
                     <Caution>保存ボタンを押さないと入力内容が消えます。こまめに保存してください。</Caution>
                 </SubSection>
                 <SubSection title="印刷する">
-                    <p>画面右上の <Chip>🖨 印刷</Chip> ボタンで印刷できます。</p>
+                    <p>画面右下の <Chip>🖨 印刷</Chip> ボタンで印刷できます。</p>
                 </SubSection>
             </Section>
 
             <Section id="attendance" title="2. 出勤職員の入力">
                 <SubSection title="シフトを選択する">
-                    <p>職種ごとに <Chip>日勤</Chip> <Chip>遅番</Chip> <Chip>夜勤</Chip> <Chip>研修・出張</Chip> のボタンが並んでいます。</p>
+                    <p>職種ごとに <Chip>早番</Chip> <Chip>日勤</Chip> <Chip>遅番</Chip> <Chip>夜勤</Chip> <Chip>研修・出張</Chip> のボタンが並んでいます。</p>
                     <p>ボタンを押すと職員選択のポップアップが表示されます。チェックを入れて <Chip primary>完了</Chip> を押してください。</p>
-                    <p>選択した職員はボタンの下にチップ（名前タグ）で表示されます。勤務種別の順（日勤→遅番→夜勤→研修）に並びます。</p>
+                    <p>選択した職員はボタンの下にチップ（名前タグ）で表示されます。勤務種別の順（早番→日勤→遅番→夜勤→研修）に並びます。</p>
                 </SubSection>
                 <SubSection title="他フロアの職員を選択する">
                     <p>看護以外の職種では、選択モーダルに <strong>1F・2F 両方の職員</strong> が表示されます（看護は同職種のみ）。</p>
@@ -58,10 +62,6 @@ export default function ManualPage() {
                 <SubSection title="入力方法">
                     <p>各項目の <Chip>＋</Chip> <Chip>－</Chip> ボタンで人数を増減します。</p>
                     <p>1F・2F それぞれ入力してください。</p>
-                </SubSection>
-                <SubSection title="前日から取り込む">
-                    <p><Chip>📥 前日から取り込む</Chip> ボタンを押すと、前日の入居者数・避難区分・介護度をそのままコピーできます。</p>
-                    <p>変化がない日はこのボタンを使うと便利です。</p>
                 </SubSection>
             </Section>
 
@@ -97,17 +97,22 @@ export default function ManualPage() {
             </Section>
 
             <Section id="settings" title="6. 職員管理（初期設定）">
+                <SubSection title="パスワード">
+                    <p>職員管理ページを開くとパスワード入力画面が表示されます。</p>
+                    <p>パスワード：<Chip>ajisaistaff</Chip></p>
+                    <p>ブラウザタブを閉じるまでは再入力不要です。</p>
+                </SubSection>
                 <SubSection title="職種の登録">
                     <ol style={{ paddingLeft: 20, lineHeight: 2 }}>
-                        <li>ナビゲーションの <Chip>👥 職員管理</Chip> を開く</li>
+                        <li>マニュアル下部の <Chip>👥 職員管理ページへ</Chip> ボタンから開く</li>
                         <li>「職種を追加」ボタンで職種名・カラー・フロアを設定</li>
-                        <li>フロア設定は夜勤巡視のドロップダウン絞り込みに使用（1F / 2F / 未設定）</li>
+                        <li>フロア設定は夜勤巡視の絞り込みに使用（1F / 2F / 未設定）</li>
                     </ol>
                 </SubSection>
-                <SubSection title="職員の登録">
+                <SubSection title="職員の登録・並び替え">
                     <ol style={{ paddingLeft: 20, lineHeight: 2 }}>
-                        <li>職種を登録した後、「職員を追加」ボタンで職員名と職種を設定</li>
-                        <li>順番はドラッグで並び替え可能</li>
+                        <li>職種を選択後、氏名を入力して Enter で職員を追加</li>
+                        <li>行左端の <Chip>⠿</Chip> をドラッグして順番を変更できます</li>
                     </ol>
                 </SubSection>
                 <Caution>職員を削除しても過去の日報データには影響しません。</Caution>

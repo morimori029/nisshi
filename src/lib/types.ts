@@ -19,6 +19,7 @@ export interface StaffMember {
 
 // 出勤区分
 export type AttendanceType =
+  | '早番'
   | '日勤'
   | '遅番'
   | '夜勤'
