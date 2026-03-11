@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDailyReport, saveDailyReport } from '@/lib/googleSheets';
+import { getDailyReport, getDailyReportWithIndex, saveDailyReport } from '@/lib/googleSheets';
 
 export async function GET(req: Request) {
     try {
@@ -22,20 +22,21 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { loadedAt, force, ...report } = body;
+        const { loadedAt, ...report } = body;
 
-        // 競合チェック（force=true なら無条件上書き）
-        if (loadedAt && !force) {
-            const current = await getDailyReport(report.date);
-            if (current?.updatedAt && current.updatedAt > loadedAt) {
-                return NextResponse.json(
-                    { success: false, conflict: true, serverUpdatedAt: current.updatedAt },
-                    { status: 409 }
-                );
-            }
+        // 1回の読み込みで競合チェックと rowIndex を取得
+        const { report: current, rowIndex } = await getDailyReportWithIndex(report.date);
+
+        // 競合チェック
+        if (loadedAt && current?.updatedAt && current.updatedAt > loadedAt) {
+            return NextResponse.json(
+                { success: false, conflict: true, serverUpdatedAt: current.updatedAt },
+                { status: 409 }
+            );
         }
 
-        await saveDailyReport(report);
+        // rowIndex を渡すことで再読み込みを省略
+        await saveDailyReport(report, rowIndex > 0 ? rowIndex : undefined);
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ success: false, error: String(error) }, { status: 500 });

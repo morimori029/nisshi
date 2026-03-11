@@ -253,7 +253,7 @@ export async function deleteStaff(staffId: string): Promise<void> {
 // 日報 (Daily Reports)
 // =====================
 
-export async function getDailyReport(date: string): Promise<DailyReport | null> {
+export async function getDailyReportWithIndex(date: string): Promise<{ report: DailyReport | null; rowIndex: number }> {
     const sheets = getSheetsClient();
     const res = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
@@ -261,27 +261,35 @@ export async function getDailyReport(date: string): Promise<DailyReport | null> 
     });
     const rows = (res.data.values || []) as string[][];
     // Row 0 = header: [date, data]
-    const dataRow = rows.slice(1).find((row) => row[0] === date);
-    if (!dataRow || !dataRow[1]) return null;
+    const rowIndex = rows.findIndex((row, i) => i > 0 && row[0] === date);
+    if (rowIndex < 1 || !rows[rowIndex][1]) return { report: null, rowIndex: -1 };
     try {
-        return JSON.parse(dataRow[1]) as DailyReport;
+        return { report: JSON.parse(rows[rowIndex][1]) as DailyReport, rowIndex };
     } catch {
-        return null;
+        return { report: null, rowIndex };
     }
 }
 
-export async function saveDailyReport(report: DailyReport): Promise<void> {
+export async function getDailyReport(date: string): Promise<DailyReport | null> {
+    const { report } = await getDailyReportWithIndex(date);
+    return report;
+}
+
+export async function saveDailyReport(report: DailyReport, knownRowIndex?: number): Promise<void> {
     const sheets = getSheetsClient();
     report.updatedAt = new Date().toISOString();
     const jsonData = JSON.stringify(report);
 
-    // Check if date already exists
-    const res = await sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEETS.REPORTS}!A:A`,
-    });
-    const dates = (res.data.values || []).flat();
-    const rowIndex = dates.indexOf(report.date);
+    let rowIndex = knownRowIndex;
+    if (rowIndex === undefined) {
+        // フォールバック: rowIndex が渡されなかった場合のみ読み込む
+        const res = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `${SHEETS.REPORTS}!A:A`,
+        });
+        const dates = (res.data.values || []).flat();
+        rowIndex = dates.indexOf(report.date);
+    }
 
     if (rowIndex > 0) {
         // Update existing row

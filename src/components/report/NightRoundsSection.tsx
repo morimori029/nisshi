@@ -182,7 +182,27 @@ export default function NightRoundsSection({ nightRounds, onChange, roles, staff
                             </button>
                         ))}
                     </div>
-                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 6, marginTop: 6 }}>
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 6, marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {(() => {
+                            const hourIndex = ROUND_HOURS.indexOf(openCell.hour);
+                            const prevHour = hourIndex > 0 ? ROUND_HOURS[hourIndex - 1] : null;
+                            const prevVal = prevHour !== null ? (nightRounds[openCell.floor][String(prevHour)] ?? '') : '';
+                            return prevVal ? (
+                                <button
+                                    onClick={() => set(openCell.floor, openCell.hour, prevVal)}
+                                    style={{
+                                        display: 'block', width: '100%',
+                                        padding: '5px 8px', fontSize: '0.75rem',
+                                        textAlign: 'center',
+                                        background: 'var(--bg-input)', color: 'var(--text-secondary)',
+                                        border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    ← 前と同じ（{prevVal}）
+                                </button>
+                            ) : null;
+                        })()}
                         <button
                             onClick={() => set(openCell.floor, openCell.hour, '')}
                             style={{

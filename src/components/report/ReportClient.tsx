@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { DailyReport, Role, StaffMember, AttendanceType } from '@/lib/types';
 import { ToastContainer, useToast } from '@/components/Toast';
@@ -71,6 +71,10 @@ function makeEmptyReport(date: string): DailyReport {
     };
 }
 
+function draftKey(date: string) {
+    return `draft_${date}`;
+}
+
 export default function ReportClient({ date }: { date: string }) {
     const router = useRouter();
     const { toasts, addToast } = useToast();
@@ -84,8 +88,10 @@ export default function ReportClient({ date }: { date: string }) {
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const [loadedAt, setLoadedAt] = useState<string | undefined>(undefined);
     const [conflictModal, setConflictModal] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
+    const [hasDraft, setHasDraft] = useState(false);
 
-    // Load roles & staff
+    // Load roles & staff（マウント時1回のみ）
     useEffect(() => {
         Promise.all([
             fetch('/api/roles').then(r => r.json()),
@@ -102,12 +108,23 @@ export default function ReportClient({ date }: { date: string }) {
         setReport(makeEmptyReport(date));
         setLoadedAt(undefined);
         setConflictModal(false);
+        setIsDirty(false);
+        setHasDraft(false);
         fetch(`/api/report?date=${date}`)
             .then(r => r.json())
             .then(res => {
                 if (res.success && res.data) {
                     setReport(res.data);
                     setLoadedAt(res.data.updatedAt);
+                    // サーバーデータと異なる下書きがあれば通知
+                    const draft = localStorage.getItem(draftKey(date));
+                    if (draft && draft !== JSON.stringify(res.data)) {
+                        setHasDraft(true);
+                    }
+                } else {
+                    // 新規日付でも下書きがあれば通知
+                    const draft = localStorage.getItem(draftKey(date));
+                    if (draft) setHasDraft(true);
                 }
             })
             .finally(() => setLoading(false));
@@ -126,6 +143,14 @@ export default function ReportClient({ date }: { date: string }) {
         }, 30000);
         return () => clearInterval(id);
     }, [date, loadedAt]);
+
+    // 未保存離脱警告
+    useEffect(() => {
+        if (!isDirty) return;
+        const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+        window.addEventListener('beforeunload', handler);
+        return () => window.removeEventListener('beforeunload', handler);
+    }, [isDirty]);
 
     // Initialise attendance entries when staff loads
     useEffect(() => {
@@ -158,6 +183,9 @@ export default function ReportClient({ date }: { date: string }) {
             if (data.success) {
                 setSaveStatus('saved');
                 setLoadedAt(report.updatedAt ?? new Date().toISOString());
+                setIsDirty(false);
+                localStorage.removeItem(draftKey(date));
+                setHasDraft(false);
                 addToast('保存しました', 'success');
             } else {
                 setSaveStatus('error');
@@ -169,11 +197,16 @@ export default function ReportClient({ date }: { date: string }) {
         } finally {
             setSaving(false);
         }
-    }, [report, loadedAt, addToast]);
+    }, [report, loadedAt, date, addToast]);
 
     const updateReport = useCallback(<K extends keyof DailyReport>(key: K, value: DailyReport[K]) => {
-        setReport(prev => ({ ...prev, [key]: value }));
-    }, []);
+        setReport(prev => {
+            const next = { ...prev, [key]: value };
+            localStorage.setItem(draftKey(date), JSON.stringify(next));
+            return next;
+        });
+        setIsDirty(true);
+    }, [date]);
 
     // 前日から入居者数・避難区分・介護度を取り込む
     const importFromPrevDay = useCallback(async () => {
@@ -184,12 +217,17 @@ export default function ReportClient({ date }: { date: string }) {
             const data = await res.json();
             if (data.success && data.data) {
                 const prevReport: DailyReport = data.data;
-                setReport(cur => ({
-                    ...cur,
-                    residents: prevReport.residents,
-                    evacuation: prevReport.evacuation,
-                    careLevels: prevReport.careLevels,
-                }));
+                setReport(cur => {
+                    const next = {
+                        ...cur,
+                        residents: prevReport.residents,
+                        evacuation: prevReport.evacuation,
+                        careLevels: prevReport.careLevels,
+                    };
+                    localStorage.setItem(draftKey(date), JSON.stringify(next));
+                    return next;
+                });
+                setIsDirty(true);
                 addToast('前日のデータを取り込みました', 'success');
             } else {
                 addToast('前日の日報データが見つかりません', 'error');
@@ -201,8 +239,33 @@ export default function ReportClient({ date }: { date: string }) {
         }
     }, [date, addToast]);
 
-    const statusIcon = { idle: '', saving: '⏳', saved: '✅', error: '❌' }[saveStatus];
-    const statusLabel = { idle: '', saving: '保存中...', saved: '保存済み', error: 'エラー' }[saveStatus];
+    const restoreDraft = useCallback(() => {
+        const draft = localStorage.getItem(draftKey(date));
+        if (!draft) return;
+        try {
+            setReport(JSON.parse(draft));
+            setIsDirty(true);
+            setHasDraft(false);
+            addToast('下書きを復元しました', 'success');
+        } catch {
+            addToast('下書きの復元に失敗しました', 'error');
+        }
+    }, [date, addToast]);
+
+    const discardDraft = useCallback(() => {
+        localStorage.removeItem(draftKey(date));
+        setHasDraft(false);
+    }, [date]);
+
+    const saveStatusClass = isDirty && saveStatus === 'idle' ? 'dirty' : saveStatus;
+    const statusIcon = { idle: '', saving: '⏳', saved: '✅', error: '❌', dirty: '●' }[saveStatusClass] ?? '';
+    const statusLabel = {
+        idle: '',
+        saving: '保存中...',
+        saved: '保存済み',
+        error: 'エラー',
+        dirty: '未保存の変更があります',
+    }[saveStatusClass] ?? '';
 
     const handleConflictReload = useCallback(() => {
         setConflictModal(false);
@@ -213,6 +276,8 @@ export default function ReportClient({ date }: { date: string }) {
                 if (res.success && res.data) {
                     setReport(res.data);
                     setLoadedAt(res.data.updatedAt);
+                    setIsDirty(false);
+                    localStorage.removeItem(draftKey(date));
                 }
             })
             .finally(() => setLoading(false));
@@ -240,7 +305,7 @@ export default function ReportClient({ date }: { date: string }) {
             )}
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, position: 'sticky', top: 0, zIndex: 100, background: 'var(--bg-page)', paddingBlock: 10, marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, paddingBlock: 10, marginBottom: 4 }}>
                 <div className="date-nav">
                     <button className="date-nav-arrow" onClick={() => router.push(`/report/${prevDate(date)}`)}>◀</button>
                     <span className="date-display">{formatDate(date)}</span>
@@ -262,10 +327,30 @@ export default function ReportClient({ date }: { date: string }) {
                 </div>
             </div>
 
+            {/* 下書き復元バナー */}
+            {hasDraft && !loading && (
+                <div className="no-print" style={{
+                    background: 'rgba(217,119,6,0.08)',
+                    border: '1px solid rgba(217,119,6,0.35)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '10px 16px',
+                    fontSize: '0.875rem',
+                    color: 'var(--orange)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    marginBottom: 8,
+                }}>
+                    <span>📝 未保存の下書きが見つかりました</span>
+                    <button className="btn btn-sm" style={{ background: 'var(--orange)', color: '#fff', border: 'none' }} onClick={restoreDraft}>復元する</button>
+                    <button className="btn btn-sm btn-secondary" onClick={discardDraft}>破棄</button>
+                </div>
+            )}
+
             {/* 右下固定ボタン */}
             <div className="no-print" style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
-                {saveStatus !== 'idle' && (
-                    <span className={`save-status ${saveStatus}`}>{statusIcon} {statusLabel}</span>
+                {(saveStatus !== 'idle' || isDirty) && (
+                    <span className={`save-status ${saveStatusClass}`}>{statusIcon} {statusLabel}</span>
                 )}
                 <div style={{ display: 'flex', gap: 10 }}>
                     <button className="btn btn-secondary" onClick={() => window.print()} style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>🖨 印刷</button>
