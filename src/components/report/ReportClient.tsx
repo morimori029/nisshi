@@ -353,8 +353,8 @@ export default function ReportClient({ date }: { date: string }) {
                     <span className={`save-status ${saveStatusClass}`}>{statusIcon} {statusLabel}</span>
                 )}
                 <div style={{ display: 'flex', gap: 10 }}>
-                    <button className="btn btn-secondary" onClick={() => window.print()} style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>🖨 印刷</button>
-                    <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ boxShadow: '0 4px 16px rgba(0,153,204,0.35)' }}>
+                    <button className="btn btn-secondary btn-lg" onClick={() => window.print()} style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>🖨 印刷</button>
+                    <button className="btn btn-primary btn-lg" onClick={handleSave} disabled={saving} style={{ boxShadow: '0 4px 16px rgba(0,153,204,0.35)' }}>
                         {saving ? '保存中...' : '💾 保存'}
                     </button>
                 </div>
