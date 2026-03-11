@@ -37,7 +37,8 @@ export async function POST(req: Request) {
 
         // rowIndex を渡すことで再読み込みを省略
         await saveDailyReport(report, rowIndex > 0 ? rowIndex : undefined);
-        return NextResponse.json({ success: true });
+        // サーバーが設定した updatedAt をクライアントに返す
+        return NextResponse.json({ success: true, updatedAt: report.updatedAt });
     } catch (error) {
         return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
     }

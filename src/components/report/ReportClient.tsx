@@ -75,6 +75,20 @@ function draftKey(date: string) {
     return `draft_${date}`;
 }
 
+// 30日以上前の下書きを localStorage から削除
+function purgeOldDrafts() {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+    const cutoffStr = cutoff.toISOString().slice(0, 10); // YYYY-MM-DD
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key?.startsWith('draft_')) {
+            const dateStr = key.slice(6); // "draft_" の後
+            if (dateStr < cutoffStr) localStorage.removeItem(key);
+        }
+    }
+}
+
 export default function ReportClient({ date }: { date: string }) {
     const router = useRouter();
     const { toasts, addToast } = useToast();
@@ -90,6 +104,9 @@ export default function ReportClient({ date }: { date: string }) {
     const [conflictModal, setConflictModal] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [hasDraft, setHasDraft] = useState(false);
+
+    // 古い下書きの削除（マウント時1回のみ）
+    useEffect(() => { purgeOldDrafts(); }, []);
 
     // Load roles & staff（マウント時1回のみ）
     useEffect(() => {
@@ -182,7 +199,7 @@ export default function ReportClient({ date }: { date: string }) {
             }
             if (data.success) {
                 setSaveStatus('saved');
-                setLoadedAt(report.updatedAt ?? new Date().toISOString());
+                setLoadedAt(data.updatedAt ?? new Date().toISOString());
                 setIsDirty(false);
                 localStorage.removeItem(draftKey(date));
                 setHasDraft(false);
