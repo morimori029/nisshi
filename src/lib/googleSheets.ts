@@ -255,16 +255,25 @@ export async function deleteStaff(staffId: string): Promise<void> {
 
 export async function getDailyReportWithIndex(date: string): Promise<{ report: DailyReport | null; rowIndex: number }> {
     const sheets = getSheetsClient();
-    const res = await sheets.spreadsheets.values.get({
+
+    // Step1: A列（日付のみ）で行番号を特定 → データ量が行数に比例しない
+    const indexRes = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEETS.REPORTS}!A:B`,
+        range: `${SHEETS.REPORTS}!A:A`,
     });
-    const rows = (res.data.values || []) as string[][];
-    // Row 0 = header: [date, data]
-    const rowIndex = rows.findIndex((row, i) => i > 0 && row[0] === date);
-    if (rowIndex < 1 || !rows[rowIndex][1]) return { report: null, rowIndex: -1 };
+    const dates = (indexRes.data.values || []).flat();
+    const rowIndex = dates.indexOf(date);
+    if (rowIndex < 1) return { report: null, rowIndex: -1 };
+
+    // Step2: 該当行のB列だけ読む
+    const dataRes = await sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEETS.REPORTS}!B${rowIndex + 1}`,
+    });
+    const jsonData = dataRes.data.values?.[0]?.[0];
+    if (!jsonData) return { report: null, rowIndex };
     try {
-        return { report: JSON.parse(rows[rowIndex][1]) as DailyReport, rowIndex };
+        return { report: JSON.parse(jsonData) as DailyReport, rowIndex };
     } catch {
         return { report: null, rowIndex };
     }
