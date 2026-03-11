@@ -83,8 +83,7 @@ export default function ReportClient({ date }: { date: string }) {
     const [importing, setImporting] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const [loadedAt, setLoadedAt] = useState<string | undefined>(undefined);
-    const [conflictBanner, setConflictBanner] = useState(false);
-    const [conflictDialog, setConflictDialog] = useState(false);
+    const [conflictModal, setConflictModal] = useState(false);
 
     // Load roles & staff
     useEffect(() => {
@@ -102,7 +101,7 @@ export default function ReportClient({ date }: { date: string }) {
         setLoading(true);
         setReport(makeEmptyReport(date));
         setLoadedAt(undefined);
-        setConflictBanner(false);
+        setConflictModal(false);
         fetch(`/api/report?date=${date}`)
             .then(r => r.json())
             .then(res => {
@@ -121,7 +120,7 @@ export default function ReportClient({ date }: { date: string }) {
                 const res = await fetch(`/api/report?date=${date}&check=1`);
                 const data = await res.json();
                 if (data.success && data.updatedAt && loadedAt && data.updatedAt > loadedAt) {
-                    setConflictBanner(true);
+                    setConflictModal(true);
                 }
             } catch { /* ネットワークエラーは無視 */ }
         }, 30000);
@@ -141,25 +140,24 @@ export default function ReportClient({ date }: { date: string }) {
         });
     }, [staff]);
 
-    const doSave = useCallback(async (force = false) => {
+    const handleSave = useCallback(async () => {
         setSaving(true);
         setSaveStatus('saving');
         try {
             const res = await fetch('/api/report', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...report, loadedAt, force }),
+                body: JSON.stringify({ ...report, loadedAt }),
             });
             const data = await res.json();
             if (res.status === 409 && data.conflict) {
                 setSaveStatus('idle');
-                setConflictDialog(true);
+                setConflictModal(true);
                 return;
             }
             if (data.success) {
                 setSaveStatus('saved');
                 setLoadedAt(report.updatedAt ?? new Date().toISOString());
-                setConflictBanner(false);
                 addToast('保存しました', 'success');
             } else {
                 setSaveStatus('error');
@@ -172,8 +170,6 @@ export default function ReportClient({ date }: { date: string }) {
             setSaving(false);
         }
     }, [report, loadedAt, addToast]);
-
-    const handleSave = useCallback(() => doSave(false), [doSave]);
 
     const updateReport = useCallback(<K extends keyof DailyReport>(key: K, value: DailyReport[K]) => {
         setReport(prev => ({ ...prev, [key]: value }));
@@ -208,9 +204,8 @@ export default function ReportClient({ date }: { date: string }) {
     const statusIcon = { idle: '', saving: '⏳', saved: '✅', error: '❌' }[saveStatus];
     const statusLabel = { idle: '', saving: '保存中...', saved: '保存済み', error: 'エラー' }[saveStatus];
 
-    // 競合ダイアログ: 再読み込みor強制上書き
     const handleConflictReload = useCallback(() => {
-        setConflictDialog(false);
+        setConflictModal(false);
         setLoading(true);
         fetch(`/api/report?date=${date}`)
             .then(r => r.json())
@@ -218,40 +213,27 @@ export default function ReportClient({ date }: { date: string }) {
                 if (res.success && res.data) {
                     setReport(res.data);
                     setLoadedAt(res.data.updatedAt);
-                    setConflictBanner(false);
                 }
             })
             .finally(() => setLoading(false));
     }, [date]);
 
-    const handleConflictForce = useCallback(() => {
-        setConflictDialog(false);
-        doSave(true);
-    }, [doSave]);
-
     return (
         <div className="report-grid">
-            {/* 競合バナー */}
-            {conflictBanner && (
-                <div className="no-print" style={{ background: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.5)', borderRadius: 'var(--radius-md)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-                    <span style={{ fontSize: '0.88rem', color: 'var(--orange)', flex: 1 }}>⚠ 他の人がこの日報を更新しました。最新データを読み込むか、このまま保存するか選択してください。</span>
-                    <button className="btn btn-secondary btn-sm" onClick={handleConflictReload}>再読み込み</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setConflictBanner(false)}>閉じる</button>
-                </div>
-            )}
-
-            {/* 競合ダイアログ（保存時に409が返った場合） */}
-            {conflictDialog && (
-                <div className="modal-overlay" onClick={() => setConflictDialog(false)}>
+            {/* 競合モーダル */}
+            {conflictModal && (
+                <div className="modal-overlay">
                     <div className="modal" onClick={e => e.stopPropagation()}>
-                        <h3 className="modal-title">⚠ 保存の競合</h3>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 16 }}>
-                            他の人がすでにこの日報を更新しています。<br />
-                            どうしますか？
+                        <h3 className="modal-title">⚠ 他の人が更新しています</h3>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 8 }}>
+                            この日報は他の人によって更新されました。<br />
+                            最新データを読み込んでください。
                         </p>
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={handleConflictReload}>最新データを読み込む（自分の入力は破棄）</button>
-                            <button className="btn btn-primary" style={{ background: 'var(--red)', borderColor: 'var(--red)' }} onClick={handleConflictForce}>このまま強制上書き保存</button>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--orange)', marginBottom: 20 }}>
+                            ※ 読み込むと現在入力中の内容は失われます。
+                        </p>
+                        <div className="modal-actions" style={{ justifyContent: 'center' }}>
+                            <button className="btn btn-primary" onClick={handleConflictReload}>最新データを読み込む</button>
                         </div>
                     </div>
                 </div>
