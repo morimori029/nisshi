@@ -305,7 +305,7 @@ export default function ReportClient({ date }: { date: string }) {
             )}
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, paddingBlock: 10, marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, paddingBlock: 10, marginBottom: 4, position: 'sticky', top: 56, zIndex: 90, background: 'var(--bg-page)' }}>
                 <div className="date-nav">
                     <button className="date-nav-arrow" onClick={() => router.push(`/report/${prevDate(date)}`)}>◀</button>
                     <span className="date-display">{formatDate(date)}</span>
@@ -314,14 +314,22 @@ export default function ReportClient({ date }: { date: string }) {
                         今日
                     </button>
                     <button
-                        className="btn btn-secondary btn-sm no-print"
+                        className="btn no-print"
                         onClick={importFromPrevDay}
                         disabled={importing}
                         title="前日の入居者数・避難区分・介護度をコピーします"
-                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            background: 'var(--accent)', color: '#fff',
+                            border: 'none', padding: '7px 14px', fontSize: '0.875rem',
+                            fontWeight: 700, borderRadius: 'var(--radius-sm)',
+                            boxShadow: '0 2px 8px rgba(0,153,204,0.3)',
+                            cursor: importing ? 'not-allowed' : 'pointer',
+                            opacity: importing ? 0.7 : 1,
+                        }}
                     >
                         {importing
-                            ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> 取り込み中...</>
+                            ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2, borderColor: '#fff', borderTopColor: 'transparent' }} /> 取り込み中...</>
                             : <>📥 前日から取り込む</>}
                     </button>
                 </div>
