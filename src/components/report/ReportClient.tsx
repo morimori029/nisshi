@@ -417,6 +417,48 @@ export default function ReportClient({ date }: { date: string }) {
                                 🏠 入居者数 / 🚨 避難区分 / 📊 介護度
                             </span>
                         </div>
+                        {/* フロア別整合性チェック */}
+                        {(() => {
+                            const r = report.residents;
+                            const e = report.evacuation;
+                            const c = report.careLevels;
+                            const checks = [
+                                {
+                                    floor: '1F',
+                                    res: r.floor1.male + r.floor1.female,
+                                    eva: e.floor1.tanso + e.floor1.goso + e.floor1.dokuho,
+                                    care: c.floor1.shien + c.floor1.care1 + c.floor1.care2 + c.floor1.care3 + c.floor1.care4 + c.floor1.care5,
+                                },
+                                {
+                                    floor: '2F',
+                                    res: r.floor2.male + r.floor2.female,
+                                    eva: e.floor2.tanso + e.floor2.goso + e.floor2.dokuho,
+                                    care: c.floor2.shien + c.floor2.care1 + c.floor2.care2 + c.floor2.care3 + c.floor2.care4 + c.floor2.care5,
+                                },
+                            ].filter(({ res, eva, care }) => res > 0 && (res !== eva || res !== care));
+                            if (checks.length === 0) return null;
+                            return (
+                                <div className="no-print" style={{
+                                    background: 'rgba(239,68,68,0.07)',
+                                    border: '1px solid rgba(239,68,68,0.3)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    padding: '8px 14px',
+                                    marginBottom: 8,
+                                    fontSize: '0.82rem',
+                                    color: '#dc2626',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 3,
+                                }}>
+                                    <strong>⚠ 合計人数が一致していません</strong>
+                                    {checks.map(({ floor, res, eva, care }) => (
+                                        <span key={floor}>
+                                            {floor}：入居者数 {res}名 ／ 避難区分 {eva}名 ／ 介護度 {care}名
+                                        </span>
+                                    ))}
+                                </div>
+                            );
+                        })()}
                         <div className="report-row resident-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                             <ResidentSection
                                 residents={report.residents}
