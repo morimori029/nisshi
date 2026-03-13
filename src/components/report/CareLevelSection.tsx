@@ -36,7 +36,9 @@ export default function CareLevelSection({ careLevels, totalResidents, onChange 
         care5: careLevels.floor1.care5 + careLevels.floor2.care5,
     };
 
-    const denom = totalResidents > 0 ? totalResidents : 1;
+    const shienTotal = combined.shien || 0;
+    const careOnlyCount = totalResidents - shienTotal;
+    const denom = careOnlyCount > 0 ? careOnlyCount : 1;
     const avgCareLevel = (weightedSum(combined) / denom).toFixed(2);
 
     const update = (floor: 'floor1' | 'floor2', key: CLKey, val: number) => {
@@ -107,7 +109,7 @@ export default function CareLevelSection({ careLevels, totalResidents, onChange 
                 <div style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: 10 }}>
                     計算式：({CL_KEYS.filter(({ weight }) => weight > 0).map(({ label, key, weight }) =>
                         `${label}×${weight}(${combined[key]}名)`
-                    ).join(' + ')}) ÷ {totalResidents}名 = {avgCareLevel}
+                    ).join(' + ')}) ÷ {careOnlyCount}名（支援除く） = {avgCareLevel}
                 </div>
             )}
         </div>
