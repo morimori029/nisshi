@@ -10,12 +10,12 @@ interface Props {
 
 type CLKey = keyof CareLevelCounts;
 const CL_KEYS: { key: CLKey; label: string; weight: number }[] = [
-    { key: 'shien', label: '支援', weight: 0 },
-    { key: 'care1', label: '要介護1', weight: 1 },
-    { key: 'care2', label: '要介護2', weight: 2 },
-    { key: 'care3', label: '要介護3', weight: 3 },
-    { key: 'care4', label: '要介護4', weight: 4 },
-    { key: 'care5', label: '要介護5', weight: 5 },
+    { key: 'shien', label: '支援・区変', weight: 0 },
+    { key: 'care1', label: '介護1', weight: 1 },
+    { key: 'care2', label: '介護2', weight: 2 },
+    { key: 'care3', label: '介護3', weight: 3 },
+    { key: 'care4', label: '介護4', weight: 4 },
+    { key: 'care5', label: '介護5', weight: 5 },
 ];
 
 function sumCL(cl: CareLevelCounts): number {
@@ -109,7 +109,7 @@ export default function CareLevelSection({ careLevels, totalResidents, onChange 
                 <div style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: 10 }}>
                     計算式：({CL_KEYS.filter(({ weight }) => weight > 0).map(({ label, key, weight }) =>
                         `${label}×${weight}(${combined[key]}名)`
-                    ).join(' + ')}) ÷ {careOnlyCount}名（支援除く） = {avgCareLevel}
+                    ).join(' + ')}) ÷ {careOnlyCount}名（支援・区変除く） = {avgCareLevel}
                 </div>
             )}
         </div>
