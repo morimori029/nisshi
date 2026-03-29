@@ -10,7 +10,7 @@ interface Props {
 
 type CLKey = keyof CareLevelCounts;
 const CL_KEYS: { key: CLKey; label: string; weight: number }[] = [
-    { key: 'shien', label: '支援・区変', weight: 0 },
+    { key: 'shien', label: '支援・区変・申請中', weight: 0 },
     { key: 'care1', label: '介護1', weight: 1 },
     { key: 'care2', label: '介護2', weight: 2 },
     { key: 'care3', label: '介護3', weight: 3 },
@@ -74,7 +74,7 @@ export default function CareLevelSection({ careLevels, totalResidents, onChange 
                             const f2 = careLevels.floor2[key];
                             return (
                                 <tr key={key}>
-                                    <td style={{ fontWeight: 500, fontSize: '0.85rem' }}>{label}</td>
+                                    <td style={{ fontWeight: 500, fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{label}</td>
                                     <td>
                                         <input type="number" min={0} className="num-input"
                                             value={f1}
@@ -109,7 +109,7 @@ export default function CareLevelSection({ careLevels, totalResidents, onChange 
                 <div style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: 10 }}>
                     計算式：({CL_KEYS.filter(({ weight }) => weight > 0).map(({ label, key, weight }) =>
                         `${label}×${weight}(${combined[key]}名)`
-                    ).join(' + ')}) ÷ {careOnlyCount}名（支援・区変除く） = {avgCareLevel}
+                    ).join(' + ')}) ÷ {careOnlyCount}名（支援・区変・申請中除く） = {avgCareLevel}
                 </div>
             )}
         </div>
