@@ -42,13 +42,45 @@ function toggleStaff(attendance: StaffAttendance[], staffId: string, type: Atten
     return [...attendance, { staffId, attendance: next, workFloor: floorVal }];
 }
 
+/* ── スタッフ行 ── */
+function StaffRow({ s, type, attendance, onToggle }: {
+    s: StaffMember; type: AttendanceType; attendance: StaffAttendance[]; onToggle: (id: string) => void;
+}) {
+    const cfg = SHIFT_CONFIG[type];
+    const checked = getAtt(attendance, s.id) === type;
+    const otherAtt = getAtt(attendance, s.id);
+    return (
+        <label style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '10px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+            background: checked ? cfg.bg : 'var(--bg-input)',
+            border: `1px solid ${checked ? cfg.border : 'var(--border)'}`,
+            transition: 'all 0.12s',
+        }}>
+            <input type="checkbox" checked={checked} onChange={() => onToggle(s.id)}
+                style={{ width: 16, height: 16, accentColor: cfg.color, cursor: 'pointer' }} />
+            <span style={{ flex: 1, fontWeight: checked ? 600 : 400, color: checked ? cfg.color : 'var(--text-primary)' }}>
+                {s.name}
+            </span>
+            {otherAtt && otherAtt !== type && (
+                <span style={{ fontSize: '0.72rem', padding: '2px 8px', background: SHIFT_CONFIG[otherAtt]?.bg, color: SHIFT_CONFIG[otherAtt]?.color, border: `1px solid ${SHIFT_CONFIG[otherAtt]?.border}`, borderRadius: 4 }}>
+                    {otherAtt}
+                </span>
+            )}
+        </label>
+    );
+}
+
 /* ── シフト選択モーダル ── */
-function ShiftModal({ type, role, roleStaff, attendance, onToggle, onClose }: {
-    type: AttendanceType; role: Role; roleStaff: StaffMember[];
+function ShiftModal({ type, role, sameFloorStaff, otherFloorStaff, otherFloorLabel, attendance, onToggle, onClose }: {
+    type: AttendanceType; role: Role;
+    sameFloorStaff: StaffMember[]; otherFloorStaff: StaffMember[]; otherFloorLabel: string;
     attendance: StaffAttendance[]; onToggle: (id: string) => void; onClose: () => void;
 }) {
     const cfg = SHIFT_CONFIG[type];
-    const selected = getStaffOfShift(attendance, roleStaff.map(s => s.id), type).length;
+    const allIds = [...sameFloorStaff, ...otherFloorStaff].map(s => s.id);
+    const selected = getStaffOfShift(attendance, allIds, type).length;
+    const showFloorLabels = otherFloorStaff.length > 0 && role.floor;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -61,34 +93,28 @@ function ShiftModal({ type, role, roleStaff, attendance, onToggle, onClose }: {
                     <div style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selected}名選択</div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 360, overflowY: 'auto' }}>
-                    {roleStaff.length === 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 400, overflowY: 'auto' }}>
+                    {sameFloorStaff.length === 0 && otherFloorStaff.length === 0 && (
                         <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 20, fontSize: '0.875rem' }}>職員が登録されていません</p>
                     )}
-                    {roleStaff.map(s => {
-                        const checked = getAtt(attendance, s.id) === type;
-                        const otherAtt = getAtt(attendance, s.id);
-                        return (
-                            <label key={s.id} style={{
-                                display: 'flex', alignItems: 'center', gap: 12,
-                                padding: '10px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                                background: checked ? cfg.bg : 'var(--bg-input)',
-                                border: `1px solid ${checked ? cfg.border : 'var(--border)'}`,
-                                transition: 'all 0.12s',
-                            }}>
-                                <input type="checkbox" checked={checked} onChange={() => onToggle(s.id)}
-                                    style={{ width: 16, height: 16, accentColor: cfg.color, cursor: 'pointer' }} />
-                                <span style={{ flex: 1, fontWeight: checked ? 600 : 400, color: checked ? cfg.color : 'var(--text-primary)' }}>
-                                    {s.name}
-                                </span>
-                                {otherAtt && otherAtt !== type && (
-                                    <span style={{ fontSize: '0.72rem', padding: '2px 8px', background: SHIFT_CONFIG[otherAtt]?.bg, color: SHIFT_CONFIG[otherAtt]?.color, border: `1px solid ${SHIFT_CONFIG[otherAtt]?.border}`, borderRadius: 4 }}>
-                                        {otherAtt}
-                                    </span>
-                                )}
-                            </label>
-                        );
-                    })}
+                    {showFloorLabels && (
+                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.06em', padding: '2px 4px' }}>
+                            ▸ {role.floor}
+                        </div>
+                    )}
+                    {sameFloorStaff.map(s => (
+                        <StaffRow key={s.id} s={s} type={type} attendance={attendance} onToggle={onToggle} />
+                    ))}
+                    {otherFloorStaff.length > 0 && (
+                        <>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', padding: '6px 4px 2px' }}>
+                                ▸ {otherFloorLabel}
+                            </div>
+                            {otherFloorStaff.map(s => (
+                                <StaffRow key={s.id} s={s} type={type} attendance={attendance} onToggle={onToggle} />
+                            ))}
+                        </>
+                    )}
                 </div>
 
                 <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
@@ -123,20 +149,22 @@ export default function AttendanceSection({ roles, staff, attendance, holidayCou
     const modalRole = modal ? roles.find(r => r.id === modal.roleId) : null;
     const nursingRoleIds = new Set(roles.filter(r => r.name.includes('看護')).map(r => r.id));
     const roleFloorMap = new Map(roles.map(r => [r.id, r.floor]));
-    const modalStaff = modal
-        ? nursingRoleIds.has(modal.roleId)
-            ? staff.filter(s => s.roleId === modal.roleId)
-            : staff
-                .filter(s => !nursingRoleIds.has(s.roleId))
-                .sort((a, b) => {
-                    const mf = modalRole?.floor;
-                    const af = roleFloorMap.get(a.roleId);
-                    const bf = roleFloorMap.get(b.roleId);
-                    const aMatch = mf && af === mf ? 0 : 1;
-                    const bMatch = mf && bf === mf ? 0 : 1;
-                    return aMatch - bMatch;
-                })
-        : [];
+
+    const { sameFloorStaff, otherFloorStaff, otherFloorLabel } = (() => {
+        if (!modal) return { sameFloorStaff: [], otherFloorStaff: [], otherFloorLabel: '' };
+        if (nursingRoleIds.has(modal.roleId)) {
+            return { sameFloorStaff: staff.filter(s => s.roleId === modal.roleId), otherFloorStaff: [], otherFloorLabel: '' };
+        }
+        const mf = modalRole?.floor;
+        const nonNursing = staff.filter(s => !nursingRoleIds.has(s.roleId));
+        if (!mf) {
+            return { sameFloorStaff: nonNursing, otherFloorStaff: [], otherFloorLabel: '' };
+        }
+        const same = nonNursing.filter(s => roleFloorMap.get(s.roleId) === mf);
+        const other = nonNursing.filter(s => roleFloorMap.get(s.roleId) !== mf);
+        const otherLabel = mf === '1F' ? '2F' : '1F';
+        return { sameFloorStaff: same, otherFloorStaff: other, otherFloorLabel: otherLabel };
+    })();
 
     // 全体集計
     const totalByShift = (type: AttendanceType) => staff.filter(s => getAtt(attendance, s.id) === type).length;
@@ -300,7 +328,8 @@ export default function AttendanceSection({ roles, staff, attendance, holidayCou
             )}
 
             {modal && modalRole && (
-                <ShiftModal type={modal.type} role={modalRole} roleStaff={modalStaff}
+                <ShiftModal type={modal.type} role={modalRole}
+                    sameFloorStaff={sameFloorStaff} otherFloorStaff={otherFloorStaff} otherFloorLabel={otherFloorLabel}
                     attendance={attendance} onToggle={handleToggle} onClose={() => setModal(null)} />
             )}
         </div>
