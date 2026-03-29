@@ -13,7 +13,6 @@ export default function AppNav() {
 
     return (
         <nav className="app-nav">
-            <span className="app-logo">🏥 介護施設 日報</span>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
                 <Link href={`/report/${today}`} className={`nav-tab ${isReport ? 'active' : ''}`}>
                     📋 日報
