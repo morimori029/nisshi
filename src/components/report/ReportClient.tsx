@@ -104,6 +104,7 @@ export default function ReportClient({ date }: { date: string }) {
     const [conflictModal, setConflictModal] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [hasDraft, setHasDraft] = useState(false);
+    const datePickerRef = useRef<HTMLInputElement>(null);
 
     // 古い下書きの削除（マウント時1回のみ）
     useEffect(() => { purgeOldDrafts(); }, []);
@@ -326,18 +327,16 @@ export default function ReportClient({ date }: { date: string }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, paddingBlock: 10, marginBottom: 4, position: 'sticky', top: 0, zIndex: 90, background: 'var(--bg-page)' }}>
                 <div className="date-nav">
                     <button className="date-nav-arrow" onClick={() => router.push(`/report/${prevDate(date)}`)}>◀</button>
-                    <span className="date-display" style={{ position: 'relative', display: 'inline-block' }}>
-                        {formatDate(date)}
-                        <input
-                            type="date"
-                            value={date}
-                            onChange={e => { if (e.target.value) router.push(`/report/${e.target.value}`); }}
-                            style={{
-                                position: 'absolute', inset: 0, opacity: 0,
-                                width: '100%', height: '100%', cursor: 'pointer',
-                            }}
-                        />
+                    <span className="date-display" style={{ cursor: 'pointer' }} onClick={() => datePickerRef.current?.showPicker()}>
+                        📅 {formatDate(date)}
                     </span>
+                    <input
+                        ref={datePickerRef}
+                        type="date"
+                        value={date}
+                        onChange={e => { if (e.target.value) router.push(`/report/${e.target.value}`); }}
+                        style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
+                    />
                     <button className="date-nav-arrow" onClick={() => router.push(`/report/${nextDate(date)}`)}>▶</button>
                     <button className="date-nav-arrow" title="今日" onClick={() => router.push(`/report/${formatDateStr(new Date())}`)}>
                         今日
