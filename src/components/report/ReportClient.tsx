@@ -326,7 +326,7 @@ export default function ReportClient({ date }: { date: string }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, paddingBlock: 10, marginBottom: 4, position: 'sticky', top: 0, zIndex: 90, background: 'var(--bg-page)' }}>
                 <div className="date-nav">
                     <button className="date-nav-arrow" onClick={() => router.push(`/report/${prevDate(date)}`)}>◀</button>
-                    <span className="date-display" style={{ position: 'relative' }}>
+                    <span className="date-display" style={{ position: 'relative', display: 'inline-block' }}>
                         {formatDate(date)}
                         <input
                             type="date"
