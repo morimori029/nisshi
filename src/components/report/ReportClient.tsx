@@ -227,6 +227,7 @@ export default function ReportClient({ date }: { date: string }) {
 
     // 前日から入居者数・避難区分・介護度を取り込む
     const importFromPrevDay = useCallback(async () => {
+        if (isDirty && !window.confirm('現在の入力内容が上書きされます。よいですか？')) return;
         setImporting(true);
         try {
             const prev = prevDate(date);
@@ -254,7 +255,7 @@ export default function ReportClient({ date }: { date: string }) {
         } finally {
             setImporting(false);
         }
-    }, [date, addToast]);
+    }, [date, isDirty, addToast]);
 
     const restoreDraft = useCallback(() => {
         const draft = localStorage.getItem(draftKey(date));
