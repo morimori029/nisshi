@@ -155,7 +155,7 @@ export async function getStaff(): Promise<StaffMember[]> {
     const sheets = getSheetsClient();
     const res = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEETS.STAFF}!A:D`,
+        range: `${SHEETS.STAFF}!A:E`,
     });
     const rows = (res.data.values || []) as string[][];
     const objects = rowsToObjects(rows);
@@ -164,6 +164,7 @@ export async function getStaff(): Promise<StaffMember[]> {
         name: r.name,
         roleId: r.roleId,
         order: parseInt(r.order) || 0,
+        status: (r.status === 'retired' ? 'retired' : 'active') as 'active' | 'retired',
     })).sort((a, b) => a.order - b.order);
 }
 
@@ -172,13 +173,13 @@ export async function addStaff(staff: Omit<StaffMember, 'id'>): Promise<StaffMem
     const id = `staff_${Date.now()}`;
     await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEETS.STAFF}!A:D`,
+        range: `${SHEETS.STAFF}!A:E`,
         valueInputOption: 'RAW',
         requestBody: {
-            values: [[id, staff.name, staff.roleId, staff.order]],
+            values: [[id, staff.name, staff.roleId, staff.order, 'active']],
         },
     });
-    return { ...staff, id };
+    return { ...staff, id, status: 'active' };
 }
 
 export async function updateStaff(staff: StaffMember): Promise<void> {
@@ -192,10 +193,10 @@ export async function updateStaff(staff: StaffMember): Promise<void> {
     if (rowIndex < 0) throw new Error('Staff not found');
     await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEETS.STAFF}!A${rowIndex + 1}:D${rowIndex + 1}`,
+        range: `${SHEETS.STAFF}!A${rowIndex + 1}:E${rowIndex + 1}`,
         valueInputOption: 'RAW',
         requestBody: {
-            values: [[staff.id, staff.name, staff.roleId, staff.order]],
+            values: [[staff.id, staff.name, staff.roleId, staff.order, staff.status ?? 'active']],
         },
     });
 }

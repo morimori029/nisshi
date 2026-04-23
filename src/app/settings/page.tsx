@@ -277,6 +277,16 @@ export default function SettingsPage() {
         } else addToast('削除エラー: ' + data.error, 'error');
     };
 
+    const updateStaffStatus = async (id: string, status: 'active' | 'retired') => {
+        const label = status === 'retired' ? '退職' : '復職';
+        const res = await fetch('/api/staff', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) });
+        const data = await res.json();
+        if (data.success) {
+            addToast(`${label}に変更しました`);
+            setStaff(prev => prev.map(s => s.id === id ? { ...s, status } : s));
+        } else addToast('更新エラー: ' + data.error, 'error');
+    };
+
     /* ------ Drag & Drop ------ */
     const dragItem = useRef<string | null>(null);
     const [dragOverRoleId, setDragOverRoleId] = useState<string | null>(null);
@@ -315,7 +325,8 @@ export default function SettingsPage() {
     };
 
     const selectedRole = roles.find(r => r.id === selectedRoleId);
-    const filteredStaff = staff.filter(s => s.roleId === selectedRoleId);
+    const activeStaff = staff.filter(s => s.roleId === selectedRoleId && s.status !== 'retired');
+    const retiredStaff = staff.filter(s => s.roleId === selectedRoleId && s.status === 'retired');
 
     if (!authed) return <PasswordGate onAuth={() => setAuthed(true)} />;
 
@@ -374,7 +385,7 @@ export default function SettingsPage() {
                                             </span>
                                         )}
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', minWidth: 32, textAlign: 'right' }}>
-                                            {staff.filter(s => s.roleId === role.id).length}名
+                                            {staff.filter(s => s.roleId === role.id && s.status !== 'retired').length}名
                                         </span>
                                         <button className="btn btn-ghost btn-sm"
                                             onClick={e => { e.stopPropagation(); setRoleModal({ open: true, editing: role }); }}>✏️</button>
@@ -394,7 +405,7 @@ export default function SettingsPage() {
                             </span>
                             {selectedRole && (
                                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                                    {filteredStaff.length}名登録済み
+                                    {activeStaff.length}名在職
                                 </span>
                             )}
                         </div>
@@ -405,11 +416,11 @@ export default function SettingsPage() {
                             </p>
                         ) : (
                             <>
-                                {/* 職員リスト */}
-                                {filteredStaff.length > 0 && (
+                                {/* 在職職員リスト */}
+                                {activeStaff.length > 0 && (
                                     <table className="data-table" style={{ marginBottom: 12 }}>
                                         <tbody>
-                                            {filteredStaff.map((s, i) => (
+                                            {activeStaff.map((s, i) => (
                                                 <tr key={s.id}
                                                     draggable
                                                     onDragStart={() => { dragItem.current = s.id; }}
@@ -426,18 +437,45 @@ export default function SettingsPage() {
                                                     <td style={{ width: 24, color: 'var(--text-muted)', fontSize: '0.85rem', userSelect: 'none' }}>⠿</td>
                                                     <td style={{ width: 28, color: 'var(--text-muted)', fontSize: '0.75rem' }}>{i + 1}</td>
                                                     <td style={{ fontWeight: 500 }}>{s.name}</td>
-                                                    <td style={{ width: 72 }}>
+                                                    <td style={{ width: 96 }}>
                                                         <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                                                             <button className="btn btn-ghost btn-sm"
                                                                 onClick={() => setEditingStaff(s)}>✏️</button>
-                                                            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }}
-                                                                onClick={() => deleteStaff(s.id)}>🗑</button>
+                                                            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--orange)', fontSize: '0.75rem' }}
+                                                                onClick={() => updateStaffStatus(s.id, 'retired')}>退職</button>
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
+                                )}
+
+                                {/* 退職者リスト */}
+                                {retiredStaff.length > 0 && (
+                                    <div style={{ marginBottom: 12 }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6, paddingLeft: 2 }}>
+                                            退職者
+                                        </div>
+                                        <table className="data-table">
+                                            <tbody>
+                                                {retiredStaff.map(s => (
+                                                    <tr key={s.id} style={{ opacity: 0.5 }}>
+                                                        <td style={{ width: 24 }} />
+                                                        <td style={{ fontWeight: 400, color: 'var(--text-muted)' }}>{s.name}</td>
+                                                        <td style={{ width: 96 }}>
+                                                            <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                                                <button className="btn btn-ghost btn-sm" style={{ color: 'var(--accent)', fontSize: '0.75rem' }}
+                                                                    onClick={() => updateStaffStatus(s.id, 'active')}>復職</button>
+                                                                <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }}
+                                                                    onClick={() => deleteStaff(s.id)}>🗑</button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 )}
 
                                 {/* ━━━ クイック追加行 ━━━ */}

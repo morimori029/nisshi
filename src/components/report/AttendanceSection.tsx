@@ -153,10 +153,10 @@ export default function AttendanceSection({ roles, staff, attendance, holidayCou
     const { sameFloorStaff, otherFloorStaff, otherFloorLabel } = (() => {
         if (!modal) return { sameFloorStaff: [], otherFloorStaff: [], otherFloorLabel: '' };
         if (nursingRoleIds.has(modal.roleId)) {
-            return { sameFloorStaff: staff.filter(s => s.roleId === modal.roleId), otherFloorStaff: [], otherFloorLabel: '' };
+            return { sameFloorStaff: staff.filter(s => s.roleId === modal.roleId && s.status !== 'retired'), otherFloorStaff: [], otherFloorLabel: '' };
         }
         const mf = modalRole?.floor;
-        const nonNursing = staff.filter(s => !nursingRoleIds.has(s.roleId));
+        const nonNursing = staff.filter(s => !nursingRoleIds.has(s.roleId) && s.status !== 'retired');
         if (!mf) {
             return { sameFloorStaff: nonNursing, otherFloorStaff: [], otherFloorLabel: '' };
         }

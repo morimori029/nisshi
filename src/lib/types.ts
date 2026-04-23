@@ -15,6 +15,7 @@ export interface StaffMember {
   name: string;
   roleId: string;
   order: number;
+  status?: 'active' | 'retired';
 }
 
 // 出勤区分

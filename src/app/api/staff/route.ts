@@ -32,8 +32,15 @@ export async function PUT(req: Request) {
 
 export async function PATCH(req: Request) {
     try {
-        const { ids } = await req.json();
-        await reorderStaff(ids);
+        const body = await req.json();
+        if (body.ids) {
+            await reorderStaff(body.ids);
+        } else if (body.id && body.status) {
+            const all = await getStaff();
+            const target = all.find(s => s.id === body.id);
+            if (!target) throw new Error('Staff not found');
+            await updateStaff({ ...target, status: body.status });
+        }
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
