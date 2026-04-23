@@ -345,25 +345,6 @@ export default function ReportClient({ date }: { date: string }) {
                     <button className="date-nav-arrow" title="今日" onClick={() => router.push(`/report/${formatDateStr(new Date())}`)}>
                         今日
                     </button>
-                    <button
-                        className="btn no-print"
-                        onClick={importFromPrevDay}
-                        disabled={importing}
-                        title="前日の入居者数・避難区分・介護度をコピーします"
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 6,
-                            background: 'var(--accent)', color: '#fff',
-                            border: 'none', padding: '7px 14px', fontSize: '0.875rem',
-                            fontWeight: 700, borderRadius: 'var(--radius-sm)',
-                            boxShadow: '0 2px 8px rgba(0,153,204,0.3)',
-                            cursor: importing ? 'not-allowed' : 'pointer',
-                            opacity: importing ? 0.7 : 1,
-                        }}
-                    >
-                        {importing
-                            ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2, borderColor: '#fff', borderTopColor: 'transparent' }} /> 取り込み中...</>
-                            : <>📥 前日から取り込む</>}
-                    </button>
                 </div>
             </div>
 
@@ -427,10 +408,29 @@ export default function ReportClient({ date }: { date: string }) {
 
                     {/* 入居者数 / 避難区分 / 介護度 */}
                     <div className="residents-block">
-                        <div style={{ marginBottom: 4 }}>
+                        <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: 12 }}>
                             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                                 🏠 入居者数 / 🚨 避難区分 / 📊 介護度
                             </span>
+                            <button
+                                className="btn no-print"
+                                onClick={importFromPrevDay}
+                                disabled={importing}
+                                title="前日の入居者数・避難区分・介護度をコピーします"
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: 6,
+                                    background: 'var(--accent)', color: '#fff',
+                                    border: 'none', padding: '5px 12px', fontSize: '0.8rem',
+                                    fontWeight: 700, borderRadius: 'var(--radius-sm)',
+                                    boxShadow: '0 2px 8px rgba(0,153,204,0.3)',
+                                    cursor: importing ? 'not-allowed' : 'pointer',
+                                    opacity: importing ? 0.7 : 1,
+                                }}
+                            >
+                                {importing
+                                    ? <><span className="spinner" style={{ width: 12, height: 12, borderWidth: 2, borderColor: '#fff', borderTopColor: 'transparent' }} /> 取り込み中...</>
+                                    : <>📥 前日から取り込む</>}
+                            </button>
                         </div>
                         {/* フロア別整合性チェック */}
                         {(() => {
