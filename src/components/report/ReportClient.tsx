@@ -420,7 +420,7 @@ export default function ReportClient({ date }: { date: string }) {
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 6,
                                     background: 'var(--accent)', color: '#fff',
-                                    border: 'none', padding: '5px 12px', fontSize: '0.8rem',
+                                    border: 'none', padding: '8px 16px', fontSize: '0.875rem',
                                     fontWeight: 700, borderRadius: 'var(--radius-sm)',
                                     boxShadow: '0 2px 8px rgba(0,153,204,0.3)',
                                     cursor: importing ? 'not-allowed' : 'pointer',
