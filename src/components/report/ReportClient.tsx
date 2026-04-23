@@ -228,7 +228,11 @@ export default function ReportClient({ date }: { date: string }) {
 
     // 前日から入居者数・避難区分・介護度を取り込む
     const importFromPrevDay = useCallback(async () => {
-        if (isDirty && !window.confirm('現在の入力内容が上書きされます。よいですか？')) return;
+        const hasData =
+            Object.values(report.residents).some(f => f.male > 0 || f.female > 0) ||
+            Object.values(report.evacuation).some(f => f.tanso > 0 || f.goso > 0 || f.dokuho > 0) ||
+            Object.values(report.careLevels).some(f => Object.values(f).some(v => (v as number) > 0));
+        if (hasData) { addToast('入居者数・避難区分・介護度が入力済みのため取り込みできません', 'error'); return; }
         setImporting(true);
         try {
             const prev = prevDate(date);
@@ -256,7 +260,7 @@ export default function ReportClient({ date }: { date: string }) {
         } finally {
             setImporting(false);
         }
-    }, [date, isDirty, addToast]);
+    }, [date, report, addToast]);
 
     const restoreDraft = useCallback(() => {
         const draft = localStorage.getItem(draftKey(date));
