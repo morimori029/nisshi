@@ -188,7 +188,7 @@ export default function AttendanceSection({ roles, staff, attendance, holidayCou
                     {/* ── 職種ごとの行 ── */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {roles.map(role => {
-                            const roleStaff = staff.filter(s => s.roleId === role.id);
+                            const roleStaff = staff.filter(s => s.roleId === role.id && s.status !== 'retired');
                             if (roleStaff.length === 0) return null;
                             const staffIds = roleStaff.map(s => s.id);
                             const unset = staffIds.filter(id => !getAtt(attendance, id)).length;
